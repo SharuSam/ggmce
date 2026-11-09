@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>경기도다문화교육연구회</title>
+<meta name="description" content="경기도다문화교육연구회 공식 홈페이지. 이주배경 가족을 위한 학교생활 안내와 선생님을 위한 다문화 교육 자료를 40개 언어로 나눕니다.">
+<meta property="og:title" content="경기도다문화교육연구회">
+<meta property="og:description" content="우리 아이 학교생활 안내부터 선생님 수업 자료까지, 여러분의 말로 볼 수 있어요.">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#18223A">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<a class="skip" href="#app">본문 바로가기</a>
+
+<header class="top">
+  <div class="top-in">
+    <a class="brand" href="#home" aria-label="홈으로">
+      <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+      <span class="brand-name notranslate" translate="no" data-setting="사이트이름">경기도다문화교육연구회</span>
+    </a>
+    <nav class="gnb" aria-label="주 메뉴">
+      <a href="#family" data-sec="family">가족 안내</a>
+      <a href="#student" data-sec="student">학생 마당</a>
+      <a href="#teacher" data-sec="teacher">선생님 자료실</a>
+      <a href="#about" data-sec="about">연구회 소개</a>
+      <a href="#news" data-sec="news">소식</a>
+    </nav>
+    <div class="tools">
+      <button class="tool lang-btn" type="button" data-open="lang" aria-label="언어 바꾸기">
+        <span aria-hidden="true">🌐</span><span class="lang-current notranslate" translate="no">한국어</span>
+      </button>
+      <button class="tool" type="button" id="fontBtn" aria-pressed="false" aria-label="글자 크게">가<b>가</b></button>
+      <button class="tool" type="button" data-open="search" aria-label="검색">🔍</button>
+    </div>
+  </div>
+</header>
+
+<div id="langNotice" class="lang-notice" hidden></div>
+<div id="demoNotice" class="demo-notice" hidden></div>
+
+<main id="app" tabindex="-1"></main>
+
+<footer class="sitefoot">
+  <div class="foot-in">
+    <div>
+      <p class="foot-name notranslate" translate="no" data-setting="사이트이름">경기도다문화교육연구회</p>
+      <p class="foot-en" data-setting="영문이름"></p>
+      <p class="foot-meta">이메일 <span data-setting="연락처이메일"></span><br>주소 <span data-setting="주소"></span></p>
+    </div>
+    <ul class="foot-links">
+      <li><a href="#contact">문의하기</a></li>
+      <li><a href="#policy">개인정보처리방침</a></li>
+      <li><a href="#terms">이용약관·저작권</a></li>
+      <li><a href="#sitemap">사이트맵</a></li>
+    </ul>
+  </div>
+  <p class="foot-note">이 홈페이지의 다른 언어 화면은 구글 자동 번역입니다. 내용이 조금 틀릴 수 있어요. '감수된 번역' 표시가 있는 글은 사람이 확인한 번역입니다.</p>
+</footer>
+
+<nav class="tabbar" aria-label="빠른 메뉴">
+  <a href="#home" data-sec="home"><span aria-hidden="true">🏠</span>홈</a>
+  <a href="#family" data-sec="family"><span aria-hidden="true">👨‍👩‍👧</span>가족</a>
+  <a href="#student" data-sec="student"><span aria-hidden="true">🎒</span>학생</a>
+  <a href="#teacher" data-sec="teacher"><span aria-hidden="true">📚</span>선생님</a>
+  <button type="button" data-open="lang"><span aria-hidden="true">🌐</span>언어</button>
+</nav>
+
+<div id="modal" class="modal" hidden>
+  <div class="modal-back" data-close></div>
+  <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <button class="modal-x" type="button" data-close aria-label="닫기">×</button>
+    <div id="modalBody"></div>
+  </div>
+</div>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<div id="google_translate_element" class="gte-holder"></div>
+
+<script src="assets/config.js"></script>
+<script src="assets/data.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="assets/app.js"></script>
+</body>
+</html>
