@@ -113,7 +113,7 @@
     if (combo) {
       combo.value = code;
       combo.dispatchEvent(new Event("change"));
-      closeModal(); applyDir(); render();
+      closeModal(); applyDir(); skipRetranslate = true; render();
     } else { location.reload(); }
   }
   function initTranslate() {
@@ -597,6 +597,19 @@
     if (V[h] && h !== "familyItem" && h !== "newsItem" && h !== "notfound") return [sec[h] || "", V[h]()];
     return ["", V.notfound()];
   }
+  // 화면을 새로 그린 뒤, 번역 중이면 구글 번역이 새 내용도 번역하도록 다시 실행
+  var skipRetranslate = false, rtTimer = null;
+  function retranslate() {
+    if (skipRetranslate) { skipRetranslate = false; return; }
+    var lang = getLang(), combo = document.querySelector(".goog-te-combo");
+    if (!TR_OK || lang === "ko" || !combo) return;
+    clearTimeout(rtTimer);
+    rtTimer = setTimeout(function () {
+      var other = lang === "en" ? "vi" : "en";
+      combo.value = other; combo.dispatchEvent(new Event("change"));
+      setTimeout(function () { combo.value = lang; combo.dispatchEvent(new Event("change")); }, 600);
+    }, 150);
+  }
   function render() {
     var r = route();
     app.innerHTML = r[1];
@@ -605,6 +618,7 @@
     var t = $("h1", app); document.title = (t && location.hash && location.hash !== "#home" ? t.textContent + " | " : "") + (setting("사이트이름") || "경기도다문화교육연구회");
     applyDir();
     after();
+    retranslate();
   }
   function after() {
     var rq = $("#resQ");
