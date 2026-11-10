@@ -61,7 +61,7 @@
   }
   function post(payload) {
     if (!LIVE) return Promise.reject(new Error("아직 구글 시트가 연결되지 않아 등록할 수 없어요. 편집 안내서의 '처음 한 번 설정'을 마치면 등록할 수 있어요."));
-    payload.lang = getLang();
+    if (!payload.lang) payload.lang = getLang();
     var adm = adminPw(); if (adm && !payload.admin) payload.admin = adm;
     return fetch(CFG.API_URL, {
       method: "POST",
