@@ -6,7 +6,7 @@
  *           예) API_URL: "https://script.google.com/macros/s/AKfy.../exec",
  */
 window.GGMCE_CONFIG = {
-  API_URL: "",
+  API_URL: "https://script.google.com/macros/s/AKfycbxqzo-aNLRkaskw9g20pOx_u2yek6X9YG6bLRgZaKs_WldMG4SRBUadpkef8kcUnP-IUQ/exec",
 
   // 첫 화면에 인사말 버튼으로 보여 줄 언어 수 (나머지는 '더 보기'에서 고릅니다)
   HERO_LANGS: 16,
