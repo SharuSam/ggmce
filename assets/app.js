@@ -62,6 +62,7 @@
   function post(payload) {
     if (!LIVE) return Promise.reject(new Error("아직 구글 시트가 연결되지 않아 등록할 수 없어요. 편집 안내서의 '처음 한 번 설정'을 마치면 등록할 수 있어요."));
     payload.lang = getLang();
+    var adm = adminPw(); if (adm && !payload.admin) payload.admin = adm;
     return fetch(CFG.API_URL, {
       method: "POST",
       headers: { "Content-Type": "text/plain;charset=utf-8" },
@@ -72,6 +73,13 @@
     });
   }
   function refresh() { return load().then(render); }
+  function adminPw() { try { return sessionStorage.getItem("ggmce.admin") || ""; } catch (e) { return ""; } }
+  function apiGet(params) {
+    var url = (CFG.API_URL || "").trim();
+    if (!url || !LIVE) return Promise.reject(new Error("구글 시트가 연결되지 않았어요."));
+    var q = Object.keys(params).map(function (k) { return encodeURIComponent(k) + "=" + encodeURIComponent(params[k]); }).join("&");
+    return fetch(url + (url.indexOf("?") < 0 ? "?" : "&") + q).then(function (r) { return r.json(); }).then(function (j) { if (!j.ok) throw new Error(j.error || "불러오지 못했어요."); return j; });
+  }
 
   /* ---------- 언어 ---------- */
   function cookieLang() {
@@ -172,6 +180,7 @@
   var lastFocus = null;
   function openModal(html) {
     lastFocus = document.activeElement;
+    $(".modal-box").classList.remove("wide");
     document.getElementById("modalBody").innerHTML = html;
     var m = document.getElementById("modal"); m.hidden = false;
     var f = $("input,select,textarea,button:not(.modal-x)", m); (f || $(".modal-x", m)).focus();
@@ -232,7 +241,7 @@
     if (!list.length) return '<div class="empty">아직 소식이 없어요.</div>';
     return '<ul class="list">' + list.map(function (n) {
       var i = (DB.공지 || []).indexOf(n);
-      return '<li><a href="#news-' + i + '"><span class="date">' + esc(n.날짜) + '</span><span><span class="tag news">' + esc(n.분류 || "공지") + "</span> " + esc(n.제목) + "</span></a></li>";
+      return '<li><a href="#news-' + esc(n.id || i) + '"><span class="date">' + esc(n.날짜) + '</span><span><span class="tag news">' + esc(n.분류 || "공지") + "</span> " + esc(n.제목) + "</span></a></li>";
     }).join("") + "</ul>";
   }
 
@@ -259,7 +268,7 @@
       "</div></section>" +
       '<section class="wrap sec"><div class="two"><div><div class="sec-head"><h2>소식</h2><a href="#news">전체 보기</a></div>' + noticeList(news) + "</div>" +
       '<div><div class="sec-head"><h2>새로 올라온 자료</h2><a href="#resources">자료실</a></div>' +
-      (picks.length ? '<ul class="list">' + picks.map(function (r) { return '<li><a href="#resources"><span class="tag teacher">' + esc(r.분류) + "</span><span>" + esc(r.제목) + "</span></a></li>"; }).join("") + "</ul>" : '<div class="empty">아직 자료가 없어요.</div>') +
+      (picks.length ? '<ul class="list">' + picks.map(function (r) { return '<li><a href="#res-' + esc(r.id) + '"><span class="tag teacher">' + esc(r.분류) + "</span><span>" + esc(r.제목) + "</span></a></li>"; }).join("") + "</ul>" : '<div class="empty">아직 자료가 없어요.</div>') +
       "</div></div></section>" +
       '<section class="wrap sec"><div class="band about"><h2>' + esc(setting("사이트이름")) + "</h2><p>" + esc(setting("연구회소개")) + '</p><a class="btn" href="#about">연구회 소개</a></div></section>' +
       '<section class="wrap sec"><div class="sec-head"><h2>도움받을 곳</h2><a href="#help">전체 보기</a></div>' + orgList(rows("기관").slice(0, 4)) + "</section>";
@@ -361,43 +370,13 @@
       '<div class="wrap"><div class="grid">' +
       tile("#resources", "🗂️", "수업 자료", "KSL 한국어, 다문화이해, 세계시민, 학적 실무") +
       tile("#boards", "🧩", "활동 보드", "분과·교실 활동 보드 모음") +
-      tile("#letters", "✉️", "다국어 가정통신문", "자주 쓰는 통신문을 여러 언어로") +
+      tile("#letters", "✉️", "다국어 가정통신문", "통신문을 만들고 한국어와 함께 인쇄") +
       tile("#news", "📢", "연수·모임 소식", "총회, 연구모임, 연수 안내") +
       '</div><div class="sec"><div class="band teacher"><h2>자료나 보드를 나눠 주세요</h2><p>로그인 없이 누구나 올릴 수 있어요. 이름과 삭제용 비밀번호만 적으면 됩니다.</p>' +
       '<p style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn solid" type="button" data-act="add-resource">자료 올리기</button><button class="btn" type="button" data-act="add-board">보드 등록하기</button></p></div></div></div>';
   };
 
-  var resFilter = { cat: "전체", who: "전체", q: "" };
-  V.resources = function () {
-    var all = rows("자료").sort(byDate);
-    var cats = ["전체"].concat(uniq(all.map(function (r) { return r.분류; })));
-    var whos = ["전체", "교사", "가족", "학생"];
-    return head("수업 자료", "선생님들이 나눈 자료예요. 누구나 올릴 수 있어요.", '<a href="#teacher">선생님 자료실</a>') +
-      '<div class="wrap"><p style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn solid" type="button" data-act="add-resource">자료 올리기</button></p>' +
-      '<input class="search" type="search" id="resQ" placeholder="자료 검색" value="' + esc(resFilter.q) + '" aria-label="자료 검색">' +
-      '<div class="filters" role="group" aria-label="분류">' + cats.map(function (c) { return '<button type="button" class="chip' + (c === resFilter.cat ? " on" : "") + '" data-cat="' + esc(c) + '">' + esc(c) + "</button>"; }).join("") + "</div>" +
-      '<div class="filters" role="group" aria-label="대상">' + whos.map(function (c) { return '<button type="button" class="chip' + (c === resFilter.who ? " on" : "") + '" data-who="' + esc(c) + '">' + (c === "전체" ? "누구나" : esc(c) + "용") + "</button>"; }).join("") + "</div>" +
-      '<div id="resList">' + resCards(all) + "</div></div>";
-  };
   function uniq(a) { var o = []; a.forEach(function (x) { if (x && o.indexOf(x) < 0) o.push(x); }); return o; }
-  function resCards(all) {
-    var q = resFilter.q.toLowerCase();
-    var list = all.filter(function (r) {
-      return (resFilter.cat === "전체" || r.분류 === resFilter.cat) &&
-        (resFilter.who === "전체" || r.대상 === resFilter.who) &&
-        (!q || (r.제목 + " " + r.설명 + " " + r.올린사람).toLowerCase().indexOf(q) >= 0);
-    });
-    if (!list.length) return '<div class="empty">조건에 맞는 자료가 없어요. 첫 자료를 올려 주세요.</div>';
-    return '<div class="cards">' + list.map(function (r) {
-      var whoCls = r.대상 === "가족" ? "family" : r.대상 === "학생" ? "student" : "teacher";
-      return '<div class="card"><div class="meta"><span class="tag ' + whoCls + '">' + esc(r.대상 || "교사") + "용</span><span class=\"tag\">" + esc(r.분류) + "</span>" + (r.학교급 ? '<span class="tag">' + esc(r.학교급) + "</span>" : "") + "</div>" +
-        "<h3>" + esc(r.제목) + '</h3><p class="desc">' + linkify(r.설명) + "</p>" +
-        '<div class="foot"><span class="by">' + esc(r.올린사람) + " · " + esc(r.등록일) + "</span>" +
-        (r.링크 ? '<a class="btn small solid" href="' + esc(r.링크) + '" target="_blank" rel="noopener">열기</a>' : '<span class="tag">링크 준비 중</span>') + "</div>" +
-        '<div class="foot"><button class="linkish" type="button" data-report="자료" data-id="' + esc(r.id) + '">신고</button><button class="linkish" type="button" data-del="자료" data-id="' + esc(r.id) + '">내 글 지우기</button></div></div>';
-    }).join("") + "</div>";
-  }
-
   V.boards = function () {
     var list = rows("보드").sort(byDate);
     return head("활동 보드", "분과와 교실에서 쓰는 보드 모음이에요. 새 보드는 누구나 등록할 수 있어요.", '<a href="#teacher">선생님 자료실</a>') +
@@ -410,31 +389,6 @@
       }).join("") + "</div>" : '<div class="empty">아직 보드가 없어요. 첫 보드를 등록해 주세요.</div>') + "</div>";
   };
 
-  var letter = { i: 0, lang: "", vals: {} };
-  V.letters = function () {
-    var ts = rows("통신문");
-    if (!ts.length) return head("다국어 가정통신문") + '<div class="wrap"><div class="empty">시트의 "통신문" 탭에 양식을 넣어 주세요.</div></div>';
-    var t = ts[letter.i] || ts[0];
-    var langs = Object.keys(t).filter(function (k) { return ["제목", "한국어", "감수", "공개", "순서"].indexOf(k) < 0; });
-    if (!letter.lang || langs.indexOf(letter.lang) < 0) letter.lang = langs[0] || "";
-    var keys = uniq((String(t.한국어).match(/\{[^}]+\}/g) || []).map(function (s) { return s.slice(1, -1); }));
-    return head("다국어 가정통신문", "양식을 고르고 빈칸을 채우면 한국어와 다른 언어 통신문이 함께 만들어져요.", '<a href="#teacher">선생님 자료실</a>') +
-      '<div class="wrap"><div class="letter-tool"><div class="panel">' +
-      '<label for="ltT">양식</label><select id="ltT">' + ts.map(function (x, i) { return '<option value="' + i + '"' + (i === letter.i ? " selected" : "") + ">" + esc(x.제목) + "</option>"; }).join("") + "</select>" +
-      '<label for="ltL">함께 넣을 언어</label><select id="ltL" class="notranslate" translate="no">' + langs.map(function (k) { return '<option value="' + esc(k) + '"' + (k === letter.lang ? " selected" : "") + ">" + esc(langName(k)) + (t[k] ? "" : " (번역 없음)") + "</option>"; }).join("") + "</select>" +
-      keys.map(function (k) { return '<label for="lt-' + esc(k) + '">' + esc(k) + '</label><input id="lt-' + esc(k) + '" data-key="' + esc(k) + '" value="' + esc(letter.vals[k] || "") + '">'; }).join("") +
-      (t.감수 ? '<p class="note" style="margin-top:14px">번역 상태: ' + esc(t.감수) + "</p>" : "") +
-      '</div><div><div class="two"><div><h3>한국어</h3><div class="paper-out notranslate" translate="no" id="ltKo"></div><p><button class="btn small" type="button" data-copy="ltKo">복사</button></p></div>' +
-      '<div><h3 class="notranslate" translate="no">' + esc(langName(letter.lang)) + '</h3><div class="paper-out notranslate" translate="no" id="ltX" lang="' + esc(letter.lang) + '"></div><p><button class="btn small" type="button" data-copy="ltX">복사</button> <button class="btn small" type="button" data-act="print">인쇄</button></p></div></div></div></div></div>';
-  };
-  function fillLetter() {
-    var ts = rows("통신문"), t = ts[letter.i] || ts[0]; if (!t) return;
-    function fill(s) { return String(s || "").replace(/\{([^}]+)\}/g, function (m, k) { return letter.vals[k] ? letter.vals[k] : "[" + k + "]"; }); }
-    var ko = $("#ltKo"), x = $("#ltX");
-    if (ko) ko.textContent = fill(t.한국어);
-    if (x) x.textContent = t[letter.lang] ? fill(t[letter.lang]) : "이 언어는 아직 번역이 없어요. 구글 시트 '통신문' 탭의 이 언어 칸에 번역을 넣으면 여기에 나와요.";
-  }
-
   V.about = function () {
     function ul(s) { var l = lines(s); return l.length ? "<ul>" + l.map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("") + "</ul>" : ""; }
     return head("연구회 소개", "", '<a href="#home">홈</a>') + '<div class="wrap"><div class="two">' +
@@ -445,19 +399,6 @@
       '<div class="article"><h2>함께하기</h2><p>' + esc(setting("회원가입안내")) + '</p><a class="btn solid" href="#contact">문의하기</a></div>' +
       '<div class="article"><h2>연락처</h2><p>이메일 ' + esc(setting("연락처이메일")) + "<br>주소 " + esc(setting("주소")) + "</p></div>" +
       "</div></div>";
-  };
-
-  V.news = function () {
-    return head("소식", "연구회 공지, 총회·연수, 행사 소식이에요.", '<a href="#home">홈</a>') + '<div class="wrap" style="max-width:860px">' + noticeList(rows("공지").sort(byDate)) + "</div>";
-  };
-  V.newsItem = function (i) {
-    var n = (DB.공지 || [])[i];
-    if (!n || !visible(n)) return V.notfound();
-    return '<div class="wrap page-head"><div class="crumb"><a href="#news">소식</a></div></div><div class="wrap"><article class="article" id="readable">' +
-      '<p><span class="tag news">' + esc(n.분류 || "공지") + '</span> <span class="date">' + esc(n.날짜) + "</span></p><h1>" + esc(n.제목) + "</h1>" + articleTools() +
-      '<div class="body">' + linkify(n.내용) + "</div>" +
-      (n.링크 ? '<p style="margin-top:16px"><a class="btn" href="' + esc(n.링크) + '" target="_blank" rel="noopener">첨부 열기</a></p>' : "") +
-      '<p class="note" style="margin-top:18px">작성: ' + esc(n.작성) + "</p></article></div>";
   };
 
   V.contact = function () {
@@ -485,8 +426,8 @@
     return head("사이트맵", "", '<a href="#home">홈</a>') + '<div class="wrap"><div class="grid">' +
       g("가족 안내", [["family", "가족 안내"], ["words", "학교 낱말 사전"], ["faq", "자주 묻는 질문"], ["help", "도움받을 곳"], ["contact", "문의하기"]]) +
       g("학생 마당", [["quiz", "다문화 퀴즈쇼"], ["flash", "학교 낱말 카드"], ["boards", "활동 보드"]]) +
-      g("선생님 자료실", [["resources", "수업 자료"], ["boards", "활동 보드"], ["letters", "다국어 가정통신문"]]) +
-      g("연구회", [["about", "연구회 소개"], ["news", "소식"], ["policy", "개인정보처리방침"], ["terms", "이용약관·저작권"]]) +
+      g("선생님 자료실", [["resources", "수업 자료"], ["boards", "활동 보드"], ["letters", "다국어 가정통신문"], ["templates", "통신문 양식"]]) +
+      g("연구회", [["about", "연구회 소개"], ["news", "소식"], ["policy", "개인정보처리방침"], ["terms", "이용약관·저작권"], ["admin", "관리자"]]) +
       "</div></div>";
   };
   V.notfound = function () { return head("페이지를 찾을 수 없어요", "주소가 바뀌었거나 글이 지워졌어요.") + '<div class="wrap"><a class="btn solid" href="#home">홈으로</a></div>'; };
@@ -499,19 +440,6 @@
   }
   var who = '<div class="two"><div><label>올린 사람 <small>(이름 또는 별명)</small><input name="이름" required maxlength="40"></label></div>' +
     '<div><label>삭제용 비밀번호 <small>(4자 이상, 나중에 지울 때 필요)</small><input name="비밀번호" type="password" required minlength="4" autocomplete="new-password"></label></div></div>';
-  function openResourceForm() {
-    var cats = ["KSL 한국어", "다문화이해", "세계시민", "학적·실무", "연수 자료", "가족 안내", "기타"];
-    openModal(formShell("자료 올리기",
-      '<label>제목<input name="제목" required maxlength="120"></label>' +
-      '<div class="two"><div><label>분류<select name="분류">' + cats.map(function (c) { return "<option>" + c + "</option>"; }).join("") + "</select></label></div>" +
-      '<div><label>누구를 위한 자료인가요?<select name="대상"><option>교사</option><option>가족</option><option>학생</option></select></label></div></div>' +
-      '<label>학교급<select name="학교급"><option>공통</option><option>초등</option><option>중등</option><option>고등</option></select></label>' +
-      '<label>설명<textarea name="설명" maxlength="1000"></textarea></label>' +
-      '<label>링크 <small>(구글 드라이브·유튜브 등 공유 링크)</small><input name="링크" type="url" placeholder="https://"></label>' +
-      '<label>또는 파일 올리기 <small>(10MB까지. PDF, 한글, PPT, 워드, 엑셀, 이미지)</small><input name="파일" type="file" accept=".pdf,.hwp,.hwpx,.ppt,.pptx,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.gif,.zip"></label>' +
-      who + '<p class="note" style="margin-top:12px">학생 얼굴 사진, 전화번호 같은 개인정보와 허락받지 않은 저작물은 올리지 마세요.</p>', "resForm"));
-    bindForm("resForm", "addResource");
-  }
   function openBoardForm() {
     openModal(formShell("보드 등록하기",
       '<label>보드 이름<input name="제목" required maxlength="120"></label>' +
@@ -579,8 +507,9 @@
       rows("가족안내").forEach(function (g, i) { if (hit(g.제목 + g.요약 + g.내용)) out.push(["#family-" + i, "가족 안내", g.제목]); });
       rows("용어사전").forEach(function (w) { if (hit(w.용어 + w.쉬운설명)) out.push(["#words", "낱말", w.용어]); });
       rows("자주묻는질문").forEach(function (f) { if (hit(f.질문 + f.답)) out.push(["#faq", "질문", f.질문]); });
-      (DB.공지 || []).forEach(function (n, i) { if (visible(n) && hit(n.제목 + n.내용)) out.push(["#news-" + i, "소식", n.제목]); });
-      rows("자료").forEach(function (r) { if (hit(r.제목 + r.설명)) out.push(["#resources", "자료", r.제목]); });
+      (DB.공지 || []).forEach(function (n, i) { if (visible(n) && hit(n.제목 + n.내용)) out.push(["#news-" + (n.id || i), "소식", n.제목]); });
+      rows("자료").forEach(function (r) { if (hit(r.제목 + r.설명)) out.push(["#res-" + r.id, "자료", r.제목]); });
+      rows("통신문").forEach(function (l) { if (hit(l.제목 + l.한국어)) out.push(["#letter-" + l.id, "통신문", l.제목]); });
       rows("보드").forEach(function (b) { if (hit(b.제목 + b.설명)) out.push(["#boards", "보드", b.제목]); });
       $("#sr").innerHTML = out.length ? '<ul class="list">' + out.slice(0, 30).map(function (o) { return '<li><a href="' + o[0] + '" data-close><span class="tag">' + o[1] + "</span><span>" + esc(o[2]) + "</span></a></li>"; }).join("") + "</ul>" : '<p class="note">찾는 내용이 없어요.</p>';
     };
@@ -591,7 +520,7 @@
     var h = (location.hash || "#home").slice(1) || "home";
     var m;
     if ((m = h.match(/^family-(\d+)$/))) return ["family", V.familyItem(+m[1])];
-    if ((m = h.match(/^news-(\d+)$/))) return ["news", V.newsItem(+m[1])];
+    for (var k = 0; k < G.routes.length; k++) { if ((m = h.match(G.routes[k].re))) return [G.routes[k].sec, G.routes[k].fn(m)]; }
     var sec = { family: "family", words: "family", faq: "family", help: "family", contact: "family", student: "student", quiz: "student", flash: "student",
       teacher: "teacher", resources: "teacher", boards: "teacher", letters: "teacher", about: "about", news: "news", home: "home", policy: "", terms: "", sitemap: "" };
     if (V[h] && h !== "familyItem" && h !== "newsItem" && h !== "notfound") return [sec[h] || "", V[h]()];
@@ -621,14 +550,6 @@
     retranslate();
   }
   function after() {
-    var rq = $("#resQ");
-    if (rq) rq.oninput = function () { resFilter.q = rq.value; $("#resList").innerHTML = resCards(rows("자료").sort(byDate)); };
-    if ($("#ltT")) {
-      $("#ltT").onchange = function () { letter.i = +this.value; letter.lang = ""; render(); };
-      $("#ltL").onchange = function () { letter.lang = this.value; render(); };
-      $$("[data-key]").forEach(function (x) { x.oninput = function () { letter.vals[x.getAttribute("data-key")] = x.value; fillLetter(); }; });
-      fillLetter();
-    }
     var cf = $("#contactForm");
     if (cf) cf.onsubmit = function (e) {
       e.preventDefault();
@@ -638,6 +559,7 @@
         .then(function () { cf.innerHTML = '<h2>보냈어요</h2><p>연구회 선생님이 확인하고 연락드릴게요.</p><a class="btn" href="#home">홈으로</a>'; })
         .catch(function (x) { err.textContent = x.message; });
     };
+    G.afters.forEach(function (f) { try { f(); } catch (x) { if (window.console) console.error(x); } });
   }
 
   /* ---------- 클릭 처리 ---------- */
@@ -648,8 +570,6 @@
     if (open === "lang") { e.preventDefault(); openLang(); return; }
     if (open === "search") { e.preventDefault(); openSearch(); return; }
     if (t.classList.contains("hello") && t.getAttribute("data-lang")) { setLang(t.getAttribute("data-lang")); return; }
-    if (t.hasAttribute("data-cat")) { resFilter.cat = t.getAttribute("data-cat"); render(); return; }
-    if (t.hasAttribute("data-who")) { resFilter.who = t.getAttribute("data-who"); render(); return; }
     if (t.hasAttribute("data-report")) { openReport(t.getAttribute("data-report"), t.getAttribute("data-id")); return; }
     if (t.hasAttribute("data-del")) { openDelete(t.getAttribute("data-del"), t.getAttribute("data-id")); return; }
     if (t.hasAttribute("data-copy")) { var el = document.getElementById(t.getAttribute("data-copy")); copyText(el.textContent, "복사했어요"); return; }
@@ -665,7 +585,7 @@
     if (!act) return;
     if (act === "speak") speak($("#readable .body") || $("#readable"), t);
     else if (act === "share") openShare();
-    else if (act === "add-resource") openResourceForm();
+    else if (act === "add-resource") location.hash = "#write-res";
     else if (act === "add-board") openBoardForm();
     else if (act === "quiz-next") { quiz.i++; render(); }
     else if (act === "quiz-restart") { quiz = { i: 0, score: 0 }; render(); }
@@ -689,6 +609,17 @@
     render(); window.scrollTo(0, 0);
     var a = document.getElementById("app"); if (a) a.focus({ preventScroll: true });
   });
+
+  var G = {
+    $: $, $$: $$, esc: esc, linkify: linkify, toast: toast, setting: setting, rows: rows, visible: visible, byDate: byDate, lines: lines, uniq: uniq,
+    post: post, apiGet: apiGet, refresh: refresh, render: render, getLang: getLang, langName: langName, LANGS: LANGS, RTL: RTL,
+    openModal: openModal, closeModal: closeModal, head: head, articleTools: articleTools, readFile: readFile, copyText: copyText,
+    openShare: openShare, openReport: openReport, V: V, routes: [], afters: [], admin: adminPw,
+    db: function () { return DB; }, live: function () { return LIVE; },
+    route: function (re, sec, fn) { G.routes.push({ re: re, sec: sec, fn: fn }); },
+    after: function (fn) { G.afters.push(fn); }
+  };
+  (window.GGMCE_MODULES || []).forEach(function (f) { f(G); });
 
   initTranslate();
   load().then(function () { render(); suggestLang(); });
