@@ -9,6 +9,7 @@
   var esc = G.esc, $ = G.$, $$ = G.$$, U = G.ui;
   var MM = 96 / 25.4;
   var PDFJS = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/";
+  var PDFDATA = "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/";  // 한글 글꼴 정보(cmaps)
   var DEF_ZONES = [
     { t: "title", x: 0.09, y: 0.125, w: 0.82, h: 0.075 },
     { t: "body", x: 0.09, y: 0.215, w: 0.82, h: 0.665 },
@@ -605,13 +606,13 @@
   function fileToImage(file) {
     var W = 1654;
     if (/pdf$/i.test(file.type) || /\.pdf$/i.test(file.name)) {
-      return pdfLib().then(function (lib) { return file.arrayBuffer().then(function (buf) { return lib.getDocument({ data: buf, cMapUrl: PDFJS + "cmaps/", cMapPacked: true, standardFontDataUrl: PDFJS + "standard_fonts/" }).promise; }); })
+      return pdfLib().then(function (lib) { return file.arrayBuffer().then(function (buf) { return lib.getDocument({ data: buf, cMapUrl: PDFDATA + "cmaps/", cMapPacked: true, standardFontDataUrl: PDFDATA + "standard_fonts/" }).promise; }); })
         .then(function (pdf) { return pdf.getPage(1); })
         .then(function (pg) {
           var v0 = pg.getViewport({ scale: 1 }), vp = pg.getViewport({ scale: W / v0.width });
           var c = document.createElement("canvas"); c.width = Math.round(vp.width); c.height = Math.round(vp.height);
           var x = c.getContext("2d"); x.fillStyle = "#fff"; x.fillRect(0, 0, c.width, c.height);
-          return pg.render({ canvasContext: x, viewport: vp }).promise.then(function () { return { img: toJpeg(c), ratio: c.height / c.width }; });
+          return pg.render({ canvasContext: x, viewport: vp, intent: "print" }).promise.then(function () { return { img: toJpeg(c), ratio: c.height / c.width }; });
         });
     }
     return new Promise(function (ok, bad) {
