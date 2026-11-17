@@ -519,8 +519,8 @@
   function route() {
     var h = (location.hash || "#home").slice(1) || "home";
     var m;
-    if ((m = h.match(/^family-(\d+)$/))) return ["family", V.familyItem(+m[1])];
     for (var k = 0; k < G.routes.length; k++) { if ((m = h.match(G.routes[k].re))) return [G.routes[k].sec, G.routes[k].fn(m)]; }
+    if ((m = h.match(/^family-(\d+)$/))) return ["family", V.familyItem(+m[1])];
     var sec = { family: "family", words: "family", faq: "family", help: "family", contact: "family", student: "student", quiz: "student", flash: "student",
       teacher: "teacher", resources: "teacher", boards: "teacher", letters: "teacher", about: "about", news: "news", home: "home", policy: "", terms: "", sitemap: "" };
     if (V[h] && h !== "familyItem" && h !== "newsItem" && h !== "notfound") return [sec[h] || "", V[h]()];
