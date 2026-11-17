@@ -261,7 +261,7 @@
       '<div class="doors">' +
       '<a class="door family" href="#family"><span class="emoji" aria-hidden="true">👨‍👩‍👧</span><h2>가족이에요</h2><p>진로·진학, 가정통신문, 학교 낱말, 도움받을 곳</p></a>' +
       '<a class="door student" href="#student"><span class="emoji" aria-hidden="true">🎒</span><h2>학생이에요</h2><p>다문화 퀴즈, 학교 낱말 카드, 활동 보드</p></a>' +
-      '<a class="door teacher" href="#teacher"><span class="emoji" aria-hidden="true">📚</span><h2>선생님이에요</h2><p>수업 자료, 다국어 통신문, 자료·보드 등록</p></a>' +
+      '<a class="door teacher" href="#teacher"><span class="emoji" aria-hidden="true">📚</span><h2>선생님이에요</h2><p>연구회 개발 자료, 다국어 통신문, 자료·보드 등록</p></a>' +
       "</div></section>" +
       '<section class="wrap sec"><div class="sec-head"><h2>가족이 많이 찾는 안내</h2><a href="#family">전체 보기</a></div><div class="grid">' +
       rows("가족안내").slice(0, 6).map(function (g, i) { return tile("#family-" + i, g.아이콘, titleOf(g), g.요약); }).join("") +
@@ -366,9 +366,9 @@
   };
 
   V.teacher = function () {
-    return head("선생님 자료실", "현장 선생님들이 만든 수업 자료와 활동 보드예요. 누구나 올릴 수 있어요.", '<a href="#home">홈</a>') +
+    return head("선생님 자료실", "연구회가 개발한 자료와 활동 보드예요. 누구나 올릴 수 있어요.", '<a href="#home">홈</a>') +
       '<div class="wrap"><div class="grid">' +
-      tile("#resources", "🗂️", "수업 자료", "KSL 한국어, 다문화이해, 세계시민, 학적 실무") +
+      tile("#resources", "🗂️", "연구회 개발 자료", "KSL 한국어, 다문화이해, 세계시민, 학적 실무") +
       tile("#boards", "🧩", "활동 보드", "분과·교실 활동 보드 모음") +
       tile("#letters", "✉️", "다국어 가정통신문", "통신문을 만들고 한국어와 함께 인쇄") +
       tile("#news", "📢", "연수·모임 소식", "총회, 연구모임, 연수 안내") +
@@ -426,7 +426,7 @@
     return head("사이트맵", "", '<a href="#home">홈</a>') + '<div class="wrap"><div class="grid">' +
       g("가족 안내", [["family", "가족 안내"], ["career", "진로·진학 길라잡이"], ["words", "학교 낱말 사전"], ["faq", "자주 묻는 질문"], ["help", "도움받을 곳"], ["contact", "문의하기"]]) +
       g("학생 마당", [["quiz", "다문화 퀴즈쇼"], ["flash", "학교 낱말 카드"], ["boards", "활동 보드"]]) +
-      g("선생님 자료실", [["resources", "수업 자료"], ["boards", "활동 보드"], ["letters", "다국어 가정통신문"], ["templates", "통신문 양식"]]) +
+      g("선생님 자료실", [["resources", "연구회 개발 자료"], ["boards", "활동 보드"], ["letters", "다국어 가정통신문"], ["templates", "통신문 양식"]]) +
       g("연구회", [["about", "연구회 소개"], ["news", "소식"], ["policy", "개인정보처리방침"], ["terms", "이용약관·저작권"], ["admin", "관리자"]]) +
       "</div></div>";
   };
