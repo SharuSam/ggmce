@@ -138,7 +138,7 @@
           '<a class="tile" href="#write-news"><span class="ic">📢</span><span><h3>소식 쓰기</h3><p>공지·연수·행사 소식</p></span></a>' +
           '<a class="tile" href="#write-letter"><span class="ic">✉️</span><span><h3>가정통신문 만들기</h3><p>여러 언어로 번역해 인쇄</p></span></a>' +
           '<a class="tile" href="#templates"><span class="ic">🖼️</span><span><h3>통신문 양식 관리</h3><p>PDF 양식 올리기·고치기</p></span></a>' +
-          '<a class="tile" href="#write-res"><span class="ic">🗂️</span><span><h3>자료 올리기</h3><p>수업 자료실</p></span></a></div>' +
+          '<a class="tile" href="#write-res"><span class="ic">🗂️</span><span><h3>자료 올리기</h3><p>연구회 개발 자료</p></span></a></div>' +
           '<p class="note">관리자로 들어와 있으면 모든 글을 비밀번호 없이 고치거나 지울 수 있어요. 숨겨진 글(공개가 N 또는 검토)은 구글 시트에서 공개를 Y로 바꾸면 보여요. 관리자 비밀번호는 구글 시트 [설정] 탭의 <b>관리자비밀번호</b>에서 바꿉니다.</p>' +
           '<p><button class="btn" type="button" id="admOut">관리자 나가기</button></p>'
         : '<form class="form" id="admForm" style="max-width:420px"><label for="admPw">관리자 비밀번호</label><input id="admPw" name="pw" type="password" required autocomplete="current-password">' +
@@ -234,7 +234,7 @@
   G.route(/^resources$/, "teacher", function () {
     var cats = ["전체"].concat(G.uniq(G.rows("자료").map(function (r) { return r.분류; })));
     var whos = ["전체", "교사", "가족", "학생"];
-    return G.head("수업 자료", "선생님들이 나눈 자료예요. 누구나 올릴 수 있어요.", '<a href="#teacher">선생님 자료실</a>') +
+    return G.head("연구회 개발 자료", "연구회에서 개발하고 나눈 자료예요. 누구나 올릴 수 있어요.", '<a href="#teacher">선생님 자료실</a>') +
       '<div class="wrap"><div class="board-top"><input class="search" type="search" id="resQ2" placeholder="자료 검색" value="' + esc(st.res.q) + '" aria-label="자료 검색">' +
       '<a class="btn solid" href="#write-res">✏️ 자료 올리기</a></div>' +
       '<div class="filters" role="group" aria-label="분류">' + cats.map(function (c) { return '<button type="button" class="chip' + (c === st.res.cat ? " on" : "") + '" data-rcat="' + esc(c) + '">' + esc(c) + "</button>"; }).join("") + "</div>" +
@@ -244,7 +244,7 @@
   G.route(/^res-(.+)$/, "teacher", function (m) {
     var r = findItem("자료", m[1]);
     if (!r) return G.V.notfound();
-    return '<div class="wrap page-head"><div class="crumb"><a href="#resources">수업 자료</a></div></div><div class="wrap"><article class="article" id="readable">' +
+    return '<div class="wrap page-head"><div class="crumb"><a href="#resources">연구회 개발 자료</a></div></div><div class="wrap"><article class="article" id="readable">' +
       '<p class="meta-line"><span class="tag ' + whoCls(r.대상) + '">' + esc(r.대상 || "교사") + '용</span> <span class="tag">' + esc(r.분류) + "</span>" + (r.학교급 ? ' <span class="tag">' + esc(r.학교급) + "</span>" : "") +
       ' <span class="date">' + esc(r.등록일) + "</span> · " + esc(r.올린사람) + "</p><h1>" + esc(r.제목) + "</h1>" + G.articleTools() +
       '<div class="body">' + (r.설명 ? G.linkify(r.설명) : '<span class="muted">설명이 없어요.</span>') + "</div>" +
@@ -253,7 +253,7 @@
   });
   function resForm(r) {
     var edit = !!r; r = r || {};
-    return G.head(edit ? "자료 고치기" : "자료 올리기", edit ? "" : "로그인 없이 누구나 올릴 수 있어요. 이름과 비밀번호만 적으면 돼요.", '<a href="#resources">수업 자료</a>') + '<div class="wrap">' + liveNote() +
+    return G.head(edit ? "자료 고치기" : "자료 올리기", edit ? "" : "로그인 없이 누구나 올릴 수 있어요. 이름과 비밀번호만 적으면 돼요.", '<a href="#resources">연구회 개발 자료</a>') + '<div class="wrap">' + liveNote() +
       '<form class="form article page-form" id="resForm2" novalidate>' +
       field({ n: "제목", l: "제목", v: r.제목, req: true, max: 120 }) +
       '<div class="fld-row">' + field({ n: "분류", l: "분류", t: "select", opts: RES_CATS, v: r.분류 || RES_CATS[0], half: true }) +
