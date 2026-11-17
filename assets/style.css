@@ -401,3 +401,9 @@ body{top:0!important}
   html.lt-printing .lt-page{margin:0;box-shadow:none;break-after:page;page-break-after:always}
   html.lt-printing .lt-page:last-child{break-after:auto;page-break-after:auto}
 }
+
+/* ===== 진로·진학 길라잡이 ===== */
+.career-bar{display:flex;justify-content:flex-end;margin-bottom:8px}
+.career-frame{position:relative;border:1px solid var(--line);border-radius:var(--r-md);overflow:hidden;background:var(--paper);min-height:240px}
+.career-frame iframe{display:block;width:100%;height:calc(100vh - 170px);min-height:560px;border:0;background:#fff}
+@media (max-width:700px){.career-frame iframe{height:calc(100vh - 130px);min-height:480px}}
